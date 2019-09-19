@@ -22,11 +22,11 @@ class Data_Loader():
 		self.data_size 	= len(vec_uit)
 		self.emb_size 	= flags.emb_size
 
-		self.d_num 	= 6
+		self.t_num 	= 6
 		self.maxlen = 60
 		self.vec_texts 	= pad_sequences(vec_texts, maxlen = self.maxlen)
-		self.vec_u_text = pad_sequences(vec_u_text, maxlen = self.d_num)
-		self.vec_i_text = pad_sequences(vec_i_text, maxlen = self.d_num)
+		self.vec_u_text = pad_sequences(vec_u_text, maxlen = self.t_num)
+		self.vec_i_text = pad_sequences(vec_i_text, maxlen = self.t_num)
 
 		self.vec_uit = np.array(vec_uit)
 
