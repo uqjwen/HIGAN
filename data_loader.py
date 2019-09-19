@@ -2,6 +2,7 @@ import numpy as np
 import pickle
 from keras.preprocessing.sequence import pad_sequences
 import tensorflow as tf
+import os
 import sys
 
 class Data_Loader():
@@ -15,6 +16,7 @@ class Data_Loader():
 		vec_i_text 	= data['vec_i_text']
 		user2idx 	= data['user2idx']
 		item2idx 	= data['item2idx']
+		self.word2idx 	= data['word2idx']
 		self.batch_size = flags.batch_size
 		self.num_user 	= len(user2idx)
 		self.num_item 	= len(item2idx)
@@ -39,6 +41,8 @@ class Data_Loader():
 		self.text_uit = self.vec_uit[self.train_size:]
 
 		self.pointer = 0
+
+		self.get_embedding()
 	def next_batch(self):
 		begin 	= self.pointer*self.batch_size
 		end		= (self.pointer+1)*self.batch_size
@@ -65,6 +69,27 @@ class Data_Loader():
 		return users, items, labels, u_texts, i_texts
 	def reset_pointer(self):
 		self.pointer = 0
+
+	def get_embedding(self):
+		emb_file = filename.split('.')[0]+'.emb'
+		if not os.path.exists('./data/'+emb_file):
+			self.w_embed = np.random.uniform(-0.25,0.25,(self.vocab_size, self.emb_size))
+			file = '/home/wenjh/Downloads/glove.6B/glove.6B.'+str(self.emb_size)+'d.txt'
+			fr = open(file)
+			for line in fr.readlines():
+				line = line.strip()
+				listfromline = line.split()
+				word = listfromline[0]
+				if word in self.word2idx:
+					vect = np.array(list(map(np.float32,listfromline[1:])))
+					idx = self.word2idx[word]
+					self.w_embed[idx] = vect
+			np.savetxt('./data/'+emb_file, self.w_embed, fmt='%.8f')
+		else:
+			self.w_embed = np.genfromtxt('./data/'+emb_file)
+
+
+
 
 
 if __name__ == '__main__':
