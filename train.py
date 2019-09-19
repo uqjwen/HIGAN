@@ -43,6 +43,8 @@ def train(sess, model, data_loader, flags):
 				fr.write('\n')
 				if rmse < best_rmse:
 					best_rmse = rmse
+					save.save(sess, flags.ckpt_dir+'/model.ckpt', global_step = trained_batches)
+
 
 
 def eval(sess, model, data_loader):
