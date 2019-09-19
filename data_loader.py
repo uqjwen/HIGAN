@@ -57,10 +57,16 @@ class Data_Loader():
 		labels = self.train_uit[begin:end][:,3]
 		users = self.train_uit[begin:end][:,0]
 		items = self.train_uit[begin:end][:,1]
-		texts = self.train_uit[begin:end][:,2]
+		texts = self.train_uit[begin:end][:,2:3]
 
+		print(texts.shape)
 		utexts = self.vec_u_text[users]
+		# utexts = np.concatenate([texts, utexts],axis=-1)
 		itexts = self.vec_i_text[items]
+		print(utexts.shape)
+
+
+
 		u_texts = self.vec_texts[utexts]
 		i_texts = self.vec_texts[itexts]
 
@@ -74,7 +80,7 @@ class Data_Loader():
 		labels = self.test_uit[:,3]
 		users = self.test_uit[:,0]
 		items = self.test_uit[:,1]
-		texts = self.test_uit[:,2]
+		texts = self.test_uit[:,2:3]
 
 		utexts = self.vec_u_text[users]
 		itexts = self.vec_i_text[items]
@@ -121,4 +127,4 @@ if __name__ == '__main__':
 	data_loader = Data_Loader(flags)
 
 	data_loader.next_batch()
-	data_loader.next_batch()
+	# data_loader.next_batch()
