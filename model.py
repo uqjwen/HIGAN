@@ -64,6 +64,8 @@ class Model(object):
 
 		self.w_att = tf.keras.layers.Dense(self.emb_size, activation = 'relu')
 
+		self.ctt_dense = tf.keras.layers.Dense(1)
+
 
 	def get_cnn(self, latent):
 		latent = tf.reshape(latent, [-1, self.maxlen, self.emb_size])
@@ -80,7 +82,8 @@ class Model(object):
 		return ret
 
 	def get_word_level_att(self, uit_cnn, ui_latent):
-		trans = self.w_att(uit_cnn) #[?,6,60,100]
+		uit_cnn_rsh = tf.reshape(uit_cnn, [-1, self.t_num, self.maxlen, self.emb_size])
+		trans = self.w_att(uit_cnn_rsh) #[?,6,60,100]
 		trans = tf.reshape(trans, [-1, self.t_num, self.maxlen, self.emb_size])
 		latent = tf.expand_dims(tf.expand_dims(ui_latent,1),1) #[?,1,1,100]
 		alpha = tf.reduce_sum(trans*latent,axis=-1) #[?,6,60]
@@ -89,26 +92,34 @@ class Model(object):
 
 		alpha = tf.expand_dims(alpha, axis=-1) #[?,6,60,1]
 
-		hidden = tf.reduce_sum(alpha*uit_cnn, axis=2) #[?,6,100]
+		hidden = tf.reduce_sum(alpha*uit_cnn_rsh, axis=2) #[?,6,100]
 
 		print(certainty.shape, alpha.shape)
 
 		return hidden*certainty
 
 		
-	def get_certainty(self,alpha):
-		alpha_sort = tf.sort(alpha, axis=-1)
+	def get_certainty(self,alpha): # ?,6,60
+		# alpha_sort = tf.sort(alpha, axis=-1)
+		alpha_mean = tf.reduce_mean(alpha, axis=-1, keepdims = True) # ?,6,1
+		# alpha_sort = alpha
+		upper_mask = alpha>alpha_mean
+		upper_mask = tf.cast(upper_mask, tf.float32)
+		lower_mask = 1.-upper_mask   # ?,6,60
 
-		half = self.maxlen//2
-		alpha_lower = alpha_sort[:,:,:half]
-		alpha_lower = tf.reduce_mean(alpha_lower, axis=-1)
-		alpha_upper = alpha_sort[:,:,half:]
-		alpha_upper = tf.reduce_mean(alpha_upper, axis=-1)
-		alpha_mean = tf.reduce_mean(alpha,axis=-1)
+		alpha_lower = tf.reduce_mean(alpha*lower_mask, axis=-1, keepdims = True) # ?,6,1
+		alpha_upper = tf.reduce_mean(alpha*upper_mask, axis=-1, keepdims = True)
+
+		# half = self.maxlen//2
+		# alpha_lower = alpha_sort[:,:,:half]
+		# alpha_lower = tf.reduce_mean(alpha_lower, axis=-1)
+		# alpha_upper = alpha_sort[:,:,half:]
+		# alpha_upper = tf.reduce_mean(alpha_upper, axis=-1)
+		# alpha_mean = tf.reduce_mean(alpha,axis=-1)
 
 		certainty = tf.nn.sigmoid((alpha_upper-alpha_mean)*(alpha_mean-alpha_lower))
 		certainty = 2*certainty - 1
-		certainty = tf.expand_dims(certainty, axis=-1)
+		# certainty = tf.expand_dims(certainty, axis=-1)
 		return certainty
 
 	def get_doc_level_att(self, u_watt, i_watt):

@@ -16,6 +16,7 @@ class Data_Loader():
 		vec_i_text 	= data['vec_i_text']
 		user2idx 	= data['user2idx']
 		item2idx 	= data['item2idx']
+		self.filename 	= flags.filename
 		self.word2idx 	= data['word2idx']
 		self.batch_size = flags.batch_size
 		self.num_user 	= len(user2idx)
@@ -35,10 +36,12 @@ class Data_Loader():
 		self.vec_uit = np.random.permutation(self.vec_uit)
 
 
-		self.train_size = int(self.data_size*0.9)
+		self.train_size = int(self.data_size*0.8)
+		self.test_size = int(self.data_size*0.1)
 
 		self.train_uit = self.vec_uit[:self.train_size]
-		self.text_uit = self.vec_uit[self.train_size:]
+		# self.test_uit = self.vec_uit[self.train_size:]
+		self.test_uit = self.vec_uit[-self.test_size:]
 
 		self.pointer = 0
 
@@ -61,17 +64,29 @@ class Data_Loader():
 		u_texts = self.vec_texts[utexts]
 		i_texts = self.vec_texts[itexts]
 
-		print(users)
-		print(utexts)
-		print(itexts)
+		# print(users)
+		# print(utexts)
+		# print(itexts)
 		# print(u_texts)
 		# print(i_texts)
 		return users, items, labels, u_texts, i_texts
+	def eval(self):
+		labels = self.test_uit[:,3]
+		users = self.test_uit[:,0]
+		items = self.test_uit[:,1]
+		texts = self.test_uit[:,2]
+
+		utexts = self.vec_u_text[users]
+		itexts = self.vec_i_text[items]
+		u_texts = self.vec_texts[utexts]
+		i_texts = self.vec_texts[itexts]
+		return users, items, labels, u_texts, i_texts
+
 	def reset_pointer(self):
 		self.pointer = 0
 
 	def get_embedding(self):
-		emb_file = filename.split('.')[0]+'.emb'
+		emb_file = self.filename.split('.')[0]+'_'+str(self.emb_size)+'d.emb'
 		if not os.path.exists('./data/'+emb_file):
 			self.w_embed = np.random.uniform(-0.25,0.25,(self.vocab_size, self.emb_size))
 			file = '/home/wenjh/Downloads/glove.6B/glove.6B.'+str(self.emb_size)+'d.txt'
