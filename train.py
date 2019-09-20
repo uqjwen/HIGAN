@@ -36,15 +36,16 @@ def train(sess, model, data_loader, flags):
 			sys.stdout.flush()
 			trained_batches = i*batches+b 
 			if trained_batches!=0 and trained_batches%10 == 0:
-				# rmse = eval(sess, model, data_loader)
-				rmse = eval_by_batch(sess, model, data_loader)
+				rmse = eval(sess, model, data_loader)
+				print(rmse)
+				# rmse = eval_by_batch(sess, model, data_loader)
 				loss = round(loss,5)
 				rmse = [round(item,5) for item in rmse]
 
 				fr.write(str(loss)+'\t'+'\t'.join(map(str, rmse)))
 				fr.write('\n')
 				if rmse[-1] < best_rmse:
-					best_rmse = rmse
+					best_rmse = rmse[-1]
 					saver.save(sess, flags.ckpt_dir+'/model.ckpt', global_step = trained_batches)
 
 
@@ -58,7 +59,7 @@ def eval(sess, model, data_loader):
 				model.i_text: i_text,
 				model.training: False}
 	loss = sess.run(model.layer_loss, feed_dict = feed_dict)
-	print(loss)
+	# print(loss)
 	loss = np.sqrt(loss)
 	return loss
 
