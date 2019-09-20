@@ -64,10 +64,16 @@ def visual(data, data_loader, idx, filename):
 		visual_single_doc(word_atts, doc, doc_idx, idx2word, raw_doc, document)
 
 	document.save('atts.docx')
-	for user_layer in data[3]:
-		doc_atts = np.squeeze(user_layer)
-		doc_atts = [round(value,5) for value in doc_atts]
-		print(' '.join(map(str,doc_atts)))
+	doc_atts = []
+	for user_layer in data[2]:
+		doc_att = np.squeeze(user_layer)
+		doc_atts.append(doc_att)
+	for item_layer in data[3]:
+		doc_att = np.squeeze(item_layer)
+		doc_atts.append(doc_att)
+	np.savetxt('doc_atts.txt', doc_atts, fmt='%.5f')
+		# doc_atts = [round(value,5) for value in doc_atts]
+		# print(' '.join(map(str,doc_atts)))
 
 	#data[0]: user word-level attention [1,6,60]
 	#data[1]: item word-level attention 
@@ -99,7 +105,6 @@ def single_document(tokens, atts, document):
 	atts = np.array(atts)
 
 	nz_atts = atts[atts!=0]
-	print(nz_atts)
 	min_size = 12
 	max_size = 20
 	if len(nz_atts)<2:
@@ -115,7 +120,6 @@ def single_document(tokens, atts, document):
 
 	atts[atts!=0] = new_atts
 	atts = atts.astype(np.int32)
-	print(atts)
 
 	p = document.add_paragraph('')
 
