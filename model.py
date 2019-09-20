@@ -42,17 +42,21 @@ class Model(object):
 		self.it_cnn = self.get_cnn(self.it_latent)
 
 
-		self.ut_watt = self.get_word_level_att(self.ut_cnn, self.u_latent) #[?,6,100]
-		self.it_watt = self.get_word_level_att(self.it_cnn, self.i_latent) #[?,6,100]
+		self.ut_watt = self.get_word_level_att(self.ut_cnn, self.u_latent, 'user') #[?,6,100]
+		self.it_watt = self.get_word_level_att(self.it_cnn, self.i_latent, 'item') #[?,6,100]
 
 
-		self.ut_final, self.it_final = self.get_doc_level_att(self.ut_watt, self.it_watt)
+		self.get_doc_level_att(self.ut_watt, self.it_watt)
 
-		self.prediction = self.get_prediction(self.u_latent+self.ut_final, self.i_latent+self.it_final)
+		# user_side = tf.concat([self.u_latent, self.doc_user[-1]], axis=-1)
+		# item_side = tf.concat([self.i_latent, self.doc_item[-1]], axis=-1)
 
-		self.loss = tf.reduce_mean(tf.square(self.prediction - tf.cast(self.label, tf.float32)))
+		# self.prediction = self.get_prediction(user_side, item_size)
 
-		self.train_op = tf.train.AdamOptimizer(learning_rate = 0.0001).minimize(self.loss)
+		# self.loss = tf.reduce_mean(tf.square(self.prediction - tf.cast(self.label, tf.float32)))
+		self.get_layer_loss()
+
+		self.train_op = tf.train.AdamOptimizer(learning_rate = 0.001).minimize(self.layer_loss[-1])
 
 
 	def define_conv(self):
@@ -65,6 +69,23 @@ class Model(object):
 		self.w_att = tf.keras.layers.Dense(self.emb_size, activation = 'relu')
 
 		self.ctt_dense = tf.keras.layers.Dense(1)
+
+		self.word_user_alpha = None
+		self.word_item_alpha = None
+		self.doc_user_alpha = [None, None, None]
+		self.doc_item_alpha = [None, None, None]
+
+
+		self.mlp_layers = 3
+		self.mlp_dense = []
+		units = self.emb_size//2
+		for i in range(self.mlp_layers):
+			self.mlp_dense.append(tf.keras.layers.Dense(units, activation='relu'))
+			units = units//2
+		self.mlp_dense.append(tf.keras.layers.Dense(1))
+
+		self.doc_user = []
+		self.doc_item = []
 
 
 	def get_cnn(self, latent):
@@ -81,13 +102,17 @@ class Model(object):
 		# print(ret.shape)
 		return ret
 
-	def get_word_level_att(self, uit_cnn, ui_latent):
+	def get_word_level_att(self, uit_cnn, ui_latent, name='user'):
 		uit_cnn_rsh = tf.reshape(uit_cnn, [-1, self.t_num, self.maxlen, self.emb_size])
 		trans = self.w_att(uit_cnn_rsh) #[?,6,60,100]
 		trans = tf.reshape(trans, [-1, self.t_num, self.maxlen, self.emb_size])
 		latent = tf.expand_dims(tf.expand_dims(ui_latent,1),1) #[?,1,1,100]
 		alpha = tf.reduce_sum(trans*latent,axis=-1) #[?,6,60]
 		alpha = tf.nn.softmax(alpha, axis=-1)
+		if name == 'user':
+			self.word_user_alpha = alpha
+		else:
+			self.word_item_alpha = alpha
 		certainty = self.get_certainty(alpha)
 
 		alpha = tf.expand_dims(alpha, axis=-1) #[?,6,60,1]
@@ -123,31 +148,37 @@ class Model(object):
 		return certainty
 
 	def get_doc_level_att(self, u_watt, i_watt):
-		us_l_1 = u_watt
-		u_l_1 = tf.reduce_max(u_watt, axis=1, keepdims = True)
+		docs_user = u_watt
+		doc_user = tf.reduce_max(u_watt, axis=1, keepdims = True)
+		self.doc_user.append(doc_user)
 
-		is_l_1 = i_watt 
-		i_l_1 = tf.reduce_max(i_watt, axis=1, keepdims = True)
+		docs_item = i_watt 
+		doc_item = tf.reduce_max(i_watt, axis=1, keepdims = True)
+		self.doc_item.append(doc_item)
 
 		layers = 3
 		for i in range(layers):
-			i_l = self.doc_level_att(u_l_1, is_l_1)
-			u_l = self.doc_level_att(i_l_1, us_l_1)
-			i_pool = tf.concat([i_l, i_l_1], axis=1)
+			i_temp = self.doc_level_att(self.doc_user[-1], docs_item, i, 'item')
+			u_temp = self.doc_level_att(self.doc_item[-1], docs_user, i, 'user')
+
+
+			i_pool = tf.concat([i_temp, self.doc_item[-1]], axis=1)
 			i_l = tf.reduce_max(i_pool, axis=1, keepdims = True)
+			self.doc_item.append(i_l)
 
-			u_pool = tf.concat([u_l, u_l_1], axis=1)
+			u_pool = tf.concat([u_temp, self.doc_user[-1]], axis=1)
 			u_l = tf.reduce_max(u_pool, axis=1, keepdims = True)
+			self.doc_user.append(u_l)
 
-			u_l_1 = u_l
-			i_l_1 = i_l
-		return u_l, i_l 
+			# u_l_1 = u_l
+			# i_l_1 = i_l
+		# return u_l, i_l 
 
 
 			# i_l = self.combine(i_l, )
 
 
-	def doc_level_att(self, vec_1, vec_2):
+	def doc_level_att(self, vec_1, vec_2, layer, name='user'):
 		#vec1 ?,100
 		#vec2 ?,6,100
 		vec2 = tf.keras.layers.Dense(self.emb_size, activation = 'relu')(vec_2) 
@@ -156,17 +187,30 @@ class Model(object):
 		alpha = tf.reduce_sum(vec1*vec2, axis=-1) #?,6
 		alpha = tf.nn.softmax(alpha, axis=-1)
 		alpha = tf.expand_dims(alpha, axis=-1) # ?,6,1
+		if name == 'user':
+			self.doc_user_alpha[layer] = alpha
+		else:
+			self.doc_item_alpha[layer] = alpha
 		return tf.reduce_sum(alpha*vec_2, axis=1, keepdims = True) # ?,1,100
 
 	def get_prediction(self,vec1, vec2):
-		layers = 1
-		embed = self.emb_size//2
+
 		hidden = vec1*vec2
-		for i in range(layers):
-			hidden = tf.keras.layers.Dense(embed, activation = 'relu')(hidden)
-			embed = embed//2
-		prediction = tf.keras.layers.Dense(1)(hidden)
-		return prediction 
+		# temp_layer = [hidden]
+		for mlp_layer in self.mlp_dense:
+			hidden = mlp_layer(hidden)
+		return hidden
+
+
+	def get_layer_loss(self):
+		self.layer_loss = []
+		for i in range(len(self.doc_user)):
+			u_side = tf.concat([self.u_latent, tf.squeeze(self.doc_user[i],axis=1)], axis=-1)
+			i_side = tf.concat([self.i_latent, tf.squeeze(self.doc_item[i],axis=1)], axis=-1)
+			prediction = self.get_prediction(u_side, i_side)
+			loss = tf.reduce_mean(tf.square(prediction - tf.cast(self.label, tf.float32)))
+			self.layer_loss.append(loss)
+
 
 
 if __name__ == '__main__':

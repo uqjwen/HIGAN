@@ -59,11 +59,11 @@ class Data_Loader():
 		items = self.train_uit[begin:end][:,1]
 		texts = self.train_uit[begin:end][:,2:3]
 
-		print(texts.shape)
+		# print(texts.shape)
 		utexts = self.vec_u_text[users]
 		# utexts = np.concatenate([texts, utexts],axis=-1)
 		itexts = self.vec_i_text[items]
-		print(utexts.shape)
+		# print(utexts.shape)
 
 
 
@@ -76,6 +76,7 @@ class Data_Loader():
 		# print(u_texts)
 		# print(i_texts)
 		return users, items, labels, u_texts, i_texts
+
 	def eval(self):
 		labels = self.test_uit[:,3]
 		users = self.test_uit[:,0]
@@ -88,6 +89,24 @@ class Data_Loader():
 		i_texts = self.vec_texts[itexts]
 		return users, items, labels, u_texts, i_texts
 
+
+
+	def sample_point(self):
+		idx = np.random.randint(0, self.train_size)
+		sample_data = self.train_uit[idx:idx+1]
+
+		user = sample_data[:,0]
+		item = sample_data[:,1]
+		text = sample_data[:,2:3]
+		label = sample_data[:,3]
+
+		utexts = self.vec_u_text[user]
+		itexts = self.vec_i_text[item]
+		u_texts = self.vec_texts[utexts]
+		i_texts = self.vec_texts[itexts]
+
+		return user,item, label, u_texts, i_texts, idx
+
 	def reset_pointer(self):
 		self.pointer = 0
 
@@ -95,6 +114,7 @@ class Data_Loader():
 		emb_file = self.filename.split('.')[0]+'_'+str(self.emb_size)+'d.emb'
 		if not os.path.exists('./data/'+emb_file):
 			self.w_embed = np.random.uniform(-0.25,0.25,(self.vocab_size, self.emb_size))
+			self.w_embed[0] = 0
 			file = '/home/wenjh/Downloads/glove.6B/glove.6B.'+str(self.emb_size)+'d.txt'
 			fr = open(file)
 			for line in fr.readlines():

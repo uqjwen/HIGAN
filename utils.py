@@ -1,5 +1,6 @@
 import re
-
+from process import readfile
+import numpy as np 
 def clean_str(string):
 	"""
 	Tokenization/string cleaning for all datasets except for SST.
@@ -26,3 +27,64 @@ def clean_str(string):
 	string = re.sub(r":", " :", string)
 	string = re.sub(r"\s{2,}", " ", string)
 	return string.strip()
+def visual(data, data_loader, idx, filename):
+	#idx: index of the sampled data point in the data_loader.train_uit
+	sample_data = data_loader.train_uit[idx]
+	user = sample_data[0]
+	item = sample_data[1]
+	text = sample_data[2]
+	label = sample_data[3]
+
+	utexts = data_loader.vec_u_text[user]
+	itexts = data_loader.vec_i_text[item]
+	u_texts = data_loader.vec_texts[utexts]
+	i_texts = data_loader.vec_texts[itexts]
+
+	idx2word = {v[1]:v[0] for v in data_loader.word2idx.items()}
+
+	# for idx, doc in zip(utexts, u_texts):
+	raw_data = readfile('./data/'+filename)
+
+
+
+	for idx, (doc_idx, doc) in enumerate(zip(utexts, u_texts)):
+		word_atts = data[0][0][idx]
+		raw_doc = raw_data[doc_idx-1]
+
+		visual_single_doc(word_atts, doc, doc_idx, idx2word, raw_doc)
+
+	for idx, (doc_idx, doc) in enumerate(zip(itexts, i_texts)):
+		word_atts = data[0][0][idx]
+		raw_doc = raw_data[doc_idx-1]
+
+		visual_single_doc(word_atts, doc, doc_idx, idx2word, raw_doc)
+
+	for user_layer in data[3]:
+		doc_atts = np.squeeze(user_layer)
+		doc_atts = [round(value,5) for value in doc_atts]
+		print(' '.join(map(str,doc_atts)))
+
+	#data[0]: user word-level attention [1,6,60]
+	#data[1]: item word-level attention 
+	#data[3]: user document-level attention list of [1,6,1]
+	#data[4]: item document-level attention 
+	pass
+def visual_single_doc(attentions, word_vec, doc_idx, idx2word, raw_doc):
+	print('text id: ', doc_idx-1)
+	import nltk
+	raw_tokens = nltk.word_tokenize(clean_str(raw_doc['reviewText'].lower()))
+	word2att = {}
+	res = []
+	for att, word_idx in zip(attentions, word_vec):
+		if word_idx!=0:
+			word = idx2word[word_idx]
+			att = round(att,5)
+			word2att[word] = max(word2att.get(word,0),att)
+
+	for token in raw_tokens:
+		att = word2att.get(token,0)	
+		res.append(token+':'+str(att))
+	print(' '.join(res))
+
+
+
