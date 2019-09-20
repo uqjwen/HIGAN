@@ -59,11 +59,11 @@ class Data_Loader():
 		items = self.train_uit[begin:end][:,1]
 		texts = self.train_uit[begin:end][:,2:3]
 
-		# print(texts.shape)
 		utexts = self.vec_u_text[users]
-		# utexts = np.concatenate([texts, utexts],axis=-1)
 		itexts = self.vec_i_text[items]
-		# print(utexts.shape)
+
+		utexts[:,0:1] = texts
+		itexts[:,0:1] = texts
 
 
 
@@ -85,6 +85,14 @@ class Data_Loader():
 
 		utexts = self.vec_u_text[users]
 		itexts = self.vec_i_text[items]
+
+		# utexts[:,0:1] = texts
+		# itexts[:,0:1] = texts
+
+
+
+
+
 		u_texts = self.vec_texts[utexts]
 		i_texts = self.vec_texts[itexts]
 		return users, items, labels, u_texts, i_texts
@@ -93,6 +101,23 @@ class Data_Loader():
 
 	def sample_point(self):
 		idx = np.random.randint(0, self.train_size)
+		seed = np.random.random()
+		index = []
+		for i in range(self.train_size):
+			if seed<0.5 and self.train_unit[i][3]==5:
+				index.append(i)
+			elif seed>0.5 and self.train_unit[i][3]==1:
+				index.append(i)
+		idx = np.random.choice(index)
+
+
+		# if np.random.random()<0.5:
+		# 	neg_idx = []
+		# 	for i in range(self.train_size):
+		# 		if self.train_uit[i][3]==1:
+		# 			neg_idx.append(i)
+
+
 		sample_data = self.train_uit[idx:idx+1]
 
 		user = sample_data[:,0]
@@ -139,7 +164,7 @@ if __name__ == '__main__':
 
 	flags = tf.flags.FLAGS 	
 	tf.flags.DEFINE_string('filename',filename,'name of file')
-	tf.flags.DEFINE_integer('batch_size',2,'batch size')
+	tf.flags.DEFINE_integer('batch_size',64,'batch size')
 	tf.flags.DEFINE_integer('emb_size',100, 'embedding size')
 	# tf.flags.DEFINE_string('base_model', 'att_cnn', 'base model')
 	flags(sys.argv)

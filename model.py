@@ -72,8 +72,8 @@ class Model(object):
 
 		self.word_user_alpha = None
 		self.word_item_alpha = None
-		self.doc_user_alpha = [None, None, None]
-		self.doc_item_alpha = [None, None, None]
+		self.doc_user_alpha = []
+		self.doc_item_alpha = []
 
 
 		self.mlp_layers = 3
@@ -188,9 +188,10 @@ class Model(object):
 		alpha = tf.nn.softmax(alpha, axis=-1)
 		alpha = tf.expand_dims(alpha, axis=-1) # ?,6,1
 		if name == 'user':
-			self.doc_user_alpha[layer] = alpha
+			self.doc_user_alpha.append(alpha)
 		else:
-			self.doc_item_alpha[layer] = alpha
+			self.doc_item_alpha.append(alpha)
+			
 		return tf.reduce_sum(alpha*vec_2, axis=1, keepdims = True) # ?,1,100
 
 	def get_prediction(self,vec1, vec2):
