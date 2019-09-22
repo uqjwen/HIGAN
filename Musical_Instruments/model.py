@@ -205,8 +205,8 @@ class Model(object):
 		cols = vec_2.shape[1]
 		mat_1 = tf.expand_dims(vec_1,2) # ?,6,1,100
 		mat_2 = tf.expand_dims(vec_2,1) # ?,1,8,100
-		mat_1 = tf.tile(mat_1, [1,1,cols,1]) # ?,6,8,100
-		mat_2 = tf.tile(mat_2, [1,rows,1,1])  # ?,6,8,100
+		# mat_1 = tf.tile(mat_1, [1,1,cols,1]) # ?,6,8,100
+		# mat_2 = tf.tile(mat_2, [1,rows,1,1])  # ?,6,8,100
 
 		mat = tf.reduce_mean(tf.square(mat_1 - mat_2), axis=-1) #?,6,8
 
