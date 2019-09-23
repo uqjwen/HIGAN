@@ -126,7 +126,7 @@ def evaluation(sess, model, data_loader, flags):
 # 		loss.append(batch_loss)
 # 	loss = np.array(loss)
 
-# 	return np.sqrt(np.mean(loss, axis=0))
+# 	return np.mean(loss, axis=0)
 
 
 def visualization(sess, model, data_loader, filename):
@@ -138,7 +138,8 @@ def visualization(sess, model, data_loader, filename):
 	else:
 		print(" [!] loading parameters failed  ...")
 		return
-	user,item,label, utexts, itexts, text= data_loader.sample_point()
+	# user,item,label, utexts, itexts, text= data_loader.sample_point()
+	user,item,label, utexts, itexts, text= data_loader.find_a_user()
 
 	feed_dict = {model.u_input: user,
 				model.i_input: item,
@@ -150,15 +151,24 @@ def visualization(sess, model, data_loader, filename):
 	res = sess.run([model.word_user_alpha, model.word_item_alpha, model.doc_user_alpha, model.doc_item_alpha], feed_dict = feed_dict)
 
 
-
-
 	u_texts = data_loader.vec_texts[utexts]
 	i_texts = data_loader.vec_texts[itexts]
-	utexts = np.squeeze(utexts)
-	u_texts = np.squeeze(u_texts)
-	itexts = np.squeeze(itexts)
-	i_texts = np.squeeze(i_texts)
-	visual(res, data_loader,utexts, itexts, u_texts, i_texts, filename)
+	# utexts = np.squeeze(utexts)
+	# u_texts = np.squeeze(u_texts)
+	# itexts = np.squeeze(itexts)
+	# i_texts = np.squeeze(i_texts)
+	# print(res[0].shape)
+	# print(np.array(res[2]).shape)
+	res[2] = np.array(res[2]).transpose(1,0,2)
+	res[3] = np.array(res[3]).transpose(1,0,2)
+
+	for i in range(len(user)):
+		uit = [user[i], item[i], label[i]]
+		print(uit)
+		res_trans = []
+		for r in res:
+			res_trans.append(r[i])
+		visual(res_trans,uit, data_loader,utexts[i], itexts[i], u_texts[i], i_texts[i], filename)
 
 
 
@@ -187,8 +197,6 @@ if __name__ == '__main__':
 	model = Model(flags, data_loader)
 
 	sess = tf.Session()
-	tf.set_random_seed(1234)
-	np.random.seed(1234)
 
 	sess.run(tf.global_variables_initializer())
 	sess.run(model.w_embed.assign(data_loader.w_embed))

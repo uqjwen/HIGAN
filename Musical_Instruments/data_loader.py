@@ -97,6 +97,48 @@ class Data_Loader():
 		return users, items, labels, utexts, itexts, texts
 
 
+	def find_a_user(self):
+		while True:
+			idx  = np.random.randint(self.train_size)
+			user = self.train_uit[idx][0]
+
+			sub_indices = np.where(self.train_uit[:,0] == user)[0]
+
+			pos_indices = np.where(self.train_uit[sub_indices,3] == 5)[0]
+			neg_indices = np.where(self.train_uit[sub_indices,3] == 1)[0]
+
+			if len(pos_indices) == 0 or len(neg_indices) == 0:
+				pass
+			else:
+				pos_idxs = sub_indices[pos_indices]
+				neg_idxs = sub_indices[neg_indices]
+
+				pos_idx = np.random.choice(pos_idxs)
+				neg_idx = np.random.choice(neg_idxs)
+
+				pos = self.train_uit[pos_idx]
+				neg = self.train_uit[neg_idx]
+
+				uit = np.array([pos,neg])
+				idx = np.array([pos_idx, neg_idx])
+
+				break
+
+
+		user = uit[:,0]
+		item = uit[:,1]
+		text = uit[:,2]
+		label = uit[:,3:]
+
+		utexts = self.train_u_text[idx]
+		itexts = self.train_i_text[idx]
+
+		return user,item,label,utexts,itexts,text
+
+
+
+
+
 
 	def sample_point(self):
 		# seed = np.random.random()
@@ -187,4 +229,6 @@ if __name__ == '__main__':
 	# data_loader.sample_point()
 	# data_loader.next_batch()
 	# data_loader.validate()
-	data_loader.eval()
+	# data_loader.eval()
+	res = data_loader.find_a_user()
+	print(res)

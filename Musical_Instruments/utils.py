@@ -30,9 +30,8 @@ def clean_str(string):
 	string = re.sub(r":", " :", string)
 	string = re.sub(r"\s{2,}", " ", string)
 	return string.strip()
-def visual(data, data_loader,utexts, itexts, u_texts, i_texts, filename):
+def visual(data, uit, data_loader,utexts, itexts, u_texts, i_texts, filename):
 	#idx: index of the sampled data point in the data_loader.train_uit
-
 	idx2word = {v[1]:v[0] for v in data_loader.word2idx.items()}
 
 	raw_data = readfile('./data/'+filename)
@@ -41,18 +40,19 @@ def visual(data, data_loader,utexts, itexts, u_texts, i_texts, filename):
 	document = Document()
 
 	for idx, (doc_idx, doc) in enumerate(zip(utexts, u_texts)):
-		word_atts = data[0][0][idx]
+		word_atts = data[0][idx]
 		raw_doc = raw_data[doc_idx-1]
 
 		visual_single_doc(word_atts, doc, doc_idx, idx2word, raw_doc, document)
 
+	document.add_paragraph('-----------------------------------------------------')
 	for idx, (doc_idx, doc) in enumerate(zip(itexts, i_texts)):
-		word_atts = data[0][0][idx]
+		word_atts = data[1][idx]
 		raw_doc = raw_data[doc_idx-1]
 
 		visual_single_doc(word_atts, doc, doc_idx, idx2word, raw_doc, document)
 
-	document.save('atts.docx')
+	document.save('_'.join(map(str,uit))+'_atts.docx')
 	doc_atts = []
 	for user_layer in data[2]:
 		doc_att = np.squeeze(user_layer)
@@ -60,7 +60,7 @@ def visual(data, data_loader,utexts, itexts, u_texts, i_texts, filename):
 	for item_layer in data[3]:
 		doc_att = np.squeeze(item_layer)
 		doc_atts.append(doc_att)
-	np.savetxt('doc_atts.txt', doc_atts, fmt='%.5f')
+	np.savetxt('_'.join(map(str,uit))+'_doc_atts.txt', doc_atts, fmt='%.5f')
 		# doc_atts = [round(value,5) for value in doc_atts]
 		# print(' '.join(map(str,doc_atts)))
 
