@@ -129,6 +129,7 @@ def eval_by_batch(sess, model, data_loader):
 	return np.mean(mae, axis=0)
 
 
+
 def visualization(sess, model, data_loader, filename):
 	saver = tf.train.Saver(max_to_keep=1)
 	ckpt = tf.train.get_checkpoint_state(flags.ckpt_dir)
@@ -138,7 +139,10 @@ def visualization(sess, model, data_loader, filename):
 	else:
 		print(" [!] loading parameters failed  ...")
 		return
-	user,item,label, utexts, itexts, text= data_loader.sample_point()
+	# user,item,label, utexts, itexts, text= data_loader.sample_point()
+	user,item,label, utexts, itexts, text= data_loader.find_a_user()
+	utexts = utexts.astype(int)
+	itexts = itexts.astype(int)
 
 	feed_dict = {model.u_input: user,
 				model.i_input: item,
@@ -150,15 +154,18 @@ def visualization(sess, model, data_loader, filename):
 	res = sess.run([model.word_user_alpha, model.word_item_alpha, model.doc_user_alpha, model.doc_item_alpha], feed_dict = feed_dict)
 
 
-
-
 	u_texts = data_loader.vec_texts[utexts]
 	i_texts = data_loader.vec_texts[itexts]
-	utexts = np.squeeze(utexts)
-	u_texts = np.squeeze(u_texts)
-	itexts = np.squeeze(itexts)
-	i_texts = np.squeeze(i_texts)
-	visual(res, data_loader,utexts, itexts, u_texts, i_texts, filename)
+	res[2] = np.array(res[2]).transpose(1,0,2)
+	res[3] = np.array(res[3]).transpose(1,0,2)
+
+	for i in range(len(user)):
+		uit = [user[i], item[i], label[i]]
+		print(uit)
+		res_trans = []
+		for r in res:
+			res_trans.append(r[i])
+		visual(res_trans,uit, data_loader,utexts[i], itexts[i], u_texts[i], i_texts[i], filename)
 
 
 

@@ -32,9 +32,11 @@ def clean_str(string):
 	return string.strip()
 def visual(data, uit, data_loader,utexts, itexts, u_texts, i_texts, filename):
 	#idx: index of the sampled data point in the data_loader.train_uit
-	idx2word = {v[1]:v[0] for v in data_loader.word2idx.items()}
+	word2idx = data_loader.word2idx
+	idx2word = {v[1]:v[0] for v in word2idx.items()}
 
-	raw_data = readfile('./data/'+filename)
+
+	raw_data = readfile(filename)
 
 
 	document = Document()
@@ -43,14 +45,14 @@ def visual(data, uit, data_loader,utexts, itexts, u_texts, i_texts, filename):
 		word_atts = data[0][idx]
 		raw_doc = raw_data[doc_idx-1]
 
-		visual_single_doc(word_atts, doc, doc_idx, idx2word, raw_doc, document)
+		visual_single_doc(word_atts, doc, doc_idx, idx2word, word2idx, raw_doc, document)
 
 	document.add_paragraph('-----------------------------------------------------')
 	for idx, (doc_idx, doc) in enumerate(zip(itexts, i_texts)):
 		word_atts = data[1][idx]
 		raw_doc = raw_data[doc_idx-1]
 
-		visual_single_doc(word_atts, doc, doc_idx, idx2word, raw_doc, document)
+		visual_single_doc(word_atts, doc, doc_idx, idx2word, word2idx, raw_doc, document)
 
 	document.save('_'.join(map(str,uit))+'_atts.docx')
 	doc_atts = []
@@ -69,10 +71,19 @@ def visual(data, uit, data_loader,utexts, itexts, u_texts, i_texts, filename):
 	#data[3]: user document-level attention list of [1,6,1]
 	#data[4]: item document-level attention 
 	pass
-def visual_single_doc(attentions, word_vec, doc_idx, idx2word, raw_doc, document):
+def visual_single_doc(attentions, word_vec, doc_idx, idx2word, word2idx, raw_doc, document):
 	print('text id: ', doc_idx)
 	import nltk
-	raw_tokens = nltk.word_tokenize(clean_str(raw_doc['reviewText'].lower()))
+	raw_tokens = nltk.word_tokenize(clean_str((raw_doc['reviewText']+' '+raw_doc['summary']).lower()))
+	idx = len(raw_tokens)-1
+	counter = 0
+
+	while counter<80 and idx >0:
+		if raw_tokens[idx] in word2idx:
+			counter+=1
+		idx = idx -1
+	raw_tokens = raw_tokens[idx:]
+
 	word2att = {}
 	res = []
 	for att, word_idx in zip(attentions, word_vec):

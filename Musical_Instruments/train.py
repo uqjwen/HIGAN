@@ -153,12 +153,6 @@ def visualization(sess, model, data_loader, filename):
 
 	u_texts = data_loader.vec_texts[utexts]
 	i_texts = data_loader.vec_texts[itexts]
-	# utexts = np.squeeze(utexts)
-	# u_texts = np.squeeze(u_texts)
-	# itexts = np.squeeze(itexts)
-	# i_texts = np.squeeze(i_texts)
-	# print(res[0].shape)
-	# print(np.array(res[2]).shape)
 	res[2] = np.array(res[2]).transpose(1,0,2)
 	res[3] = np.array(res[3]).transpose(1,0,2)
 
