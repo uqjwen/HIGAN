@@ -7,7 +7,7 @@ import sys
 
 class Data_Loader():
 	def __init__(self, flags):
-		data = pickle.load(open('./data/'+flags.filename.split('.')[0]+'.pkl','rb'))
+		data = pickle.load(open(flags.filename.split('.')[0]+'.pkl','rb'))
 		# print(len(data))
 		vec_texts 	= data['vec_texts']
 		vocab 		= data['vocab']
@@ -36,7 +36,7 @@ class Data_Loader():
 		self.vec_uit = np.array(vec_uit)
 
 		pmtt = np.random.permutation(self.data_size)
-		pmtt_file = './data/'+flags.filename.split('.')[0]+'_pmtt.npy'
+		pmtt_file = flags.filename.split('.')[0]+'_pmtt.npy'
 		if not os.path.exists(pmtt_file):
 			np.save(pmtt_file, pmtt)
 		else:
@@ -97,6 +97,48 @@ class Data_Loader():
 		return users, items, labels, utexts, itexts, texts
 
 
+	def find_a_user(self):
+		while True:
+			idx  = np.random.randint(self.train_size)
+			user = self.train_uit[idx][0]
+
+			sub_indices = np.where(self.train_uit[:,0] == user)[0]
+
+			pos_indices = np.where(self.train_uit[sub_indices,3] == 5)[0]
+			neg_indices = np.where(self.train_uit[sub_indices,3] == 1)[0]
+
+			if len(pos_indices) == 0 or len(neg_indices) == 0:
+				pass
+			else:
+				pos_idxs = sub_indices[pos_indices]
+				neg_idxs = sub_indices[neg_indices]
+
+				pos_idx = np.random.choice(pos_idxs)
+				neg_idx = np.random.choice(neg_idxs)
+
+				pos = self.train_uit[pos_idx]
+				neg = self.train_uit[neg_idx]
+
+				uit = np.array([pos,neg])
+				idx = np.array([pos_idx, neg_idx])
+
+				break
+
+
+		user = uit[:,0]
+		item = uit[:,1]
+		text = uit[:,2]
+		label = uit[:,3:]
+
+		utexts = self.train_u_text[idx]
+		itexts = self.train_i_text[idx]
+
+		return user,item,label,utexts,itexts,text
+
+
+
+
+
 
 	def sample_point(self):
 		# seed = np.random.random()
@@ -136,7 +178,7 @@ class Data_Loader():
 
 	def get_embedding(self):
 		emb_file = self.filename.split('.')[0]+'_'+str(self.emb_size)+'d.emb'
-		if not os.path.exists('./data/'+emb_file):
+		if not os.path.exists(emb_file):
 			self.w_embed = np.random.uniform(-0.25,0.25,(self.vocab_size, self.emb_size))
 			self.w_embed[0] = 0
 			file = '/home/wenjh/Downloads/glove.6B/glove.6B.'+str(self.emb_size)+'d.txt'
@@ -149,9 +191,9 @@ class Data_Loader():
 					vect = np.array(list(map(np.float32,listfromline[1:])))
 					idx = self.word2idx[word]
 					self.w_embed[idx] = vect
-			np.savetxt('./data/'+emb_file, self.w_embed, fmt='%.8f')
+			np.savetxt(emb_file, self.w_embed, fmt='%.8f')
 		else:
-			self.w_embed = np.genfromtxt('./data/'+emb_file)
+			self.w_embed = np.genfromtxt(emb_file)
 
 
 	def validate(self):
@@ -172,7 +214,8 @@ class Data_Loader():
 
 
 if __name__ == '__main__':
-	filename = 'Office_Products_5.json'
+	prefix = '/home/wenjh/aHIGAN/Office_Products/'
+	filename = prefix+'Office_Products_5.json'
 
 
 	flags = tf.flags.FLAGS 	
@@ -187,4 +230,6 @@ if __name__ == '__main__':
 	# data_loader.sample_point()
 	# data_loader.next_batch()
 	# data_loader.validate()
-	data_loader.eval()
+	# data_loader.eval()
+	res = data_loader.find_a_user()
+	print(res)

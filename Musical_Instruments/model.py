@@ -229,15 +229,15 @@ class Model(object):
 		
 
 	def get_doc_level_att(self, u_watt, i_watt):
-		# doc_user = tf.reduce_mean(u_watt, axis=1, keepdims = True)
-		doc_user, doc_item = self.get_initial_vec(u_watt, i_watt)
+		doc_user = tf.reduce_mean(u_watt, axis=1, keepdims = True)
+		# doc_user, doc_item = self.get_initial_vec(u_watt, i_watt)
 		docs_user = u_watt
 		# doc_user = u_watt[:,0:1,:]
 		self.doc_user.append(doc_user)
 
 		docs_item = i_watt 
 		# doc_item = i_watt[:,0:1,:]
-		# doc_item = tf.reduce_mean(i_watt, axis=1, keepdims = True)
+		doc_item = tf.reduce_mean(i_watt, axis=1, keepdims = True)
 		self.doc_item.append(doc_item)
 
 		self.u_watt = u_watt 
@@ -330,7 +330,8 @@ class Model(object):
 
 
 if __name__ == '__main__':
-	filename = 'Musical_Instruments_5.json'
+	prefix = '/home/wenjh/aHIGAN/Musical_Instruments/'
+	filename = prefix+'Musical_Instruments_5.json'
 
 
 	flags = tf.flags.FLAGS 	

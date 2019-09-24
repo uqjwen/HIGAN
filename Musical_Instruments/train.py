@@ -178,7 +178,8 @@ def visualization(sess, model, data_loader, filename):
 
 
 if __name__ == '__main__':
-	filename = 'Musical_Instruments_5.json'
+	prefix = '/home/wenjh/aHIGAN/Musical_Instruments/'
+	filename = prefix+'Musical_Instruments_5.json'
 
 
 	flags = tf.flags.FLAGS 	
@@ -186,7 +187,7 @@ if __name__ == '__main__':
 	tf.flags.DEFINE_integer('batch_size',64,'batch size')
 	tf.flags.DEFINE_integer('emb_size',100, 'embedding size')
 	tf.flags.DEFINE_integer('num_class', 5, "num of classes")
-	tf.flags.DEFINE_integer('epoch', 100, 'epochs for training')
+	tf.flags.DEFINE_integer('epoch', 40, 'epochs for training')
 	tf.flags.DEFINE_string('ckpt_dir',filename.split('.')[0], 'directory of checkpoint')
 	tf.flags.DEFINE_string('train_test', 'train', 'training or test')
 	# tf.flags.DEFINE_string('base_model', 'att_cnn', 'base model')

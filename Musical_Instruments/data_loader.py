@@ -7,7 +7,7 @@ import sys
 
 class Data_Loader():
 	def __init__(self, flags):
-		data = pickle.load(open('./data/'+flags.filename.split('.')[0]+'.pkl','rb'))
+		data = pickle.load(open(flags.filename.split('.')[0]+'.pkl','rb'))
 		# print(len(data))
 		vec_texts 	= data['vec_texts']
 		vocab 		= data['vocab']
@@ -36,7 +36,7 @@ class Data_Loader():
 		self.vec_uit = np.array(vec_uit)
 
 		pmtt = np.random.permutation(self.data_size)
-		pmtt_file = './data/'+flags.filename.split('.')[0]+'_pmtt.npy'
+		pmtt_file = flags.filename.split('.')[0]+'_pmtt.npy'
 		if not os.path.exists(pmtt_file):
 			np.save(pmtt_file, pmtt)
 		else:
@@ -178,7 +178,7 @@ class Data_Loader():
 
 	def get_embedding(self):
 		emb_file = self.filename.split('.')[0]+'_'+str(self.emb_size)+'d.emb'
-		if not os.path.exists('./data/'+emb_file):
+		if not os.path.exists(emb_file):
 			self.w_embed = np.random.uniform(-0.25,0.25,(self.vocab_size, self.emb_size))
 			self.w_embed[0] = 0
 			file = '/home/wenjh/Downloads/glove.6B/glove.6B.'+str(self.emb_size)+'d.txt'
@@ -191,9 +191,9 @@ class Data_Loader():
 					vect = np.array(list(map(np.float32,listfromline[1:])))
 					idx = self.word2idx[word]
 					self.w_embed[idx] = vect
-			np.savetxt('./data/'+emb_file, self.w_embed, fmt='%.8f')
+			np.savetxt(emb_file, self.w_embed, fmt='%.8f')
 		else:
-			self.w_embed = np.genfromtxt('./data/'+emb_file)
+			self.w_embed = np.genfromtxt(emb_file)
 
 
 	def validate(self):
@@ -214,7 +214,8 @@ class Data_Loader():
 
 
 if __name__ == '__main__':
-	filename = 'Musical_Instruments_5.json'
+	prefix = '/home/wenjh/aHIGAN/Musical_Instruments/'
+	filename = prefix+'Musical_Instruments_5.json'
 
 
 	flags = tf.flags.FLAGS 	

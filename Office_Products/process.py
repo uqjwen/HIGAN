@@ -5,7 +5,6 @@ import json
 import nltk
 import nltk
 import pickle
-import tensorflow as tf 
 stopwords = nltk.corpus.stopwords.words('english')
 
 def readfile(filename):
@@ -183,9 +182,10 @@ def get_vocab_tfidf(corpus, vocab_size = 20000):
 
 
 def validate(filename):
-	filename = 'Office_Products_5.json'
-	data1 = readfile('./data/'+filename)
-	data2 = pickle.load(open('./data/'+filename.split('.')[0]+'.pkl','rb'))
+	prefix = '/home/wenjh/aHIGAN/Office_Products/'
+	filename = prefix+'Office_Products_5.json'
+	data1 = readfile(filename)
+	data2 = pickle.load(open(filename.split('.')[0]+'.pkl','rb'))
 
 
 	length = len(data2['vec_uit'])
@@ -237,15 +237,43 @@ def get_neighbors(mat):
 			res_mat[i,j] = res 
 			res_mat[j,i] = res
 	return res_mat
+def get_neighbors_1(mat):
+	rows,cols = mat.shape
+	res_mat = np.zeros((rows,rows))
 
+	for i in range(rows):
+		sys.stdout.write('\r {}/{}'.format(i,rows))
+		a1 = mat[i]
+		nz_idx = np.where(a1!=0)[0]
+		a1 = a1[nz_idx]
+		sub_mat = mat[i:].T[nz_idx].T
 
+		commo_vec = (a1*sub_mat!=0).astype(int)
+		equal_vec = (a1==sub_mat).astype(int)
 
+		coeq_vote = np.sum(commo_vec*equal_vec, axis=1)
+		comm_vote = np.sum(commo_vec, axis=1)
 
+		norm = np.sqrt(comm_vote)
+		norm = np.maximum(norm, 1)
+		res = coeq_vote/norm 
+
+		res_mat[i,i:] = res 
+		res_mat[i:,i] = res 
+	return res_mat
 
 def build_ui_text(vec_uit, num_user, num_item, filename):
-	filename = './data/'+filename.split('.')[0]
+	filename = filename.split('.')[0]
 	ui_mat = np.zeros((num_user, num_item))
-	for uit in vec_uit:
+	pmtt_file = filename+'_pmtt.npy'
+	if os.path.exists(pmtt_file):
+		pmtt = np.load(pmtt_file)
+	else:
+		pmtt = np.random.permutation(len(vec_uit))
+
+	train_size = int(len(vec_uit)*0.8)
+	train_vec_uit = np.array(vec_uit)[pmtt][:train_size]
+	for uit in train_vec_uit:
 		u = uit[0]
 		i = uit[1]
 		r = uit[3]
@@ -254,18 +282,19 @@ def build_ui_text(vec_uit, num_user, num_item, filename):
 	file = filename+'_u_neighbors.npy'
 	if not os.path.exists(file):
 		print('user neighbors file not exists')
-		u_neighbor_mat = get_neighbors(ui_mat)
+		u_neighbor_mat = get_neighbors_1(ui_mat)
 		np.save(file, u_neighbor_mat)
 	else:
 		u_neighbor_mat = np.load(file)
 	file = filename+'_i_neighbors.npy'
 	if not os.path.exists(file):
 		print('user neighbors file not exists')
-		i_neighbor_mat = get_neighbors(ui_mat.T)
+		i_neighbor_mat = get_neighbors_1(ui_mat.T)
 		np.save(file, i_neighbor_mat)
 	else:
 		i_neighbor_mat = np.load(file)
 
+	print("getting documents...")
 	vec_u_text = get_doc_neighbors(vec_uit, u_neighbor_mat, i_neighbor_mat, 'item')
 	vec_i_text = get_doc_neighbors(vec_uit, u_neighbor_mat, i_neighbor_mat, 'user')
 	np.savetxt('utexts.txt', vec_u_text, fmt='%d')
@@ -303,26 +332,45 @@ def get_doc_neighbors(vec_uit, u_neighbor_mat, i_neighbor_mat, name='item'):
 		if len(index)>=num:
 			neighbors_1 = index[sort_index][:num]+1
 		else:
-			neighbors_1 = np.concatenate([index[sort_index]+1,np.array([i+1]*(num-len(index)))])
+			neighbors_1 = np.concatenate([index[sort_index]+1,np.array([0]*(num-len(index)))])
 		# neighbors_1 = [i+1]+list(index[sort_index][:num]+1)
-
+		neighbors_1[0] = 0
+		neighbors_1 = np.random.permutation(neighbors_1)
+		
 		res.append(neighbors_1)
 
 	return np.array(res) 
 
 def build_data(filename):
-	data = readfile('./data/'+filename)
+	data = readfile(filename)
 	# u_dict, i_dict = filter_ui(data, 5,5)
 	# print(len(u_dict), len(i_dict))
 	# data = data_after_filter(data, u_dict, i_dict)
+	# vec_texts, vocab, word2idx = build_vocab(data)
+	temp_file = filename.split('/')[:-1]
+	temp_file = '/'.join(temp_file)+'/temp_dat.pkl'
+	
 	print('building vocab...')
-	vec_texts, vocab, word2idx = build_vocab(data)
-	print('building ui vocab...')
+	if not os.path.exists(temp_file):
+		vec_texts, vocab, word2idx = build_vocab(data)
+		temp_data = {}
+		temp_data['text'] = vec_texts
+		temp_data['vocab'] = vocab
+		temp_data['word2idx'] = word2idx
+		fr = open(temp_file,'wb')
+		pickle.dump(temp_data, fr)
+		fr.close()
+	else:
+		fr = open(temp_file,'rb')
+		temp_data = pickle.load(fr)
+		vec_texts = temp_data['text']
+		vocab = temp_data['vocab']
+		word2idx = temp_data['word2idx']
+
+	print('building ui vocab...')	
 	vec_uit, vec_u_text, vec_i_text, user2idx, item2idx = build_ui_vocab(data)
 	num_user = len(user2idx)
 	num_item = len(item2idx)
-
-	print('building ui similar text...')
 	vec_u_text, vec_i_text = build_ui_text(vec_uit, num_user, num_item, filename)
 
 	data_save = {}
@@ -335,13 +383,14 @@ def build_data(filename):
 	data_save['user2idx'] 	= user2idx
 	data_save['item2idx'] 	= item2idx
 
-	fr = open('./data/'+filename.split('.')[0]+'.pkl','wb')
+	fr = open(filename.split('.')[0]+'.pkl','wb')
 	pickle.dump(data_save,fr)
 
 
 
 if __name__ == '__main__':
-	filename = 'Office_Products_5.json'
+	prefix = '/home/wenjh/aHIGAN/Office_Products/'
+	filename = prefix+'Office_Products_5.json'
 
 	build_data(filename)
 	# validate(filename)

@@ -330,7 +330,7 @@ class Model(object):
 
 
 if __name__ == '__main__':
-	filename = 'Office_Products_5.json'
+	filename = 'Musical_Instruments_5.json'
 
 
 	flags = tf.flags.FLAGS 	
