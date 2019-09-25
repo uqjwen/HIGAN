@@ -29,8 +29,10 @@ def get_line_cross_files(domain):
 	for directory in domain:
 		filename = './'+directory+'/loss.txt'
 		sub_data = np.genfromtxt(filename)
-		plt_data = sub_data[:,-1:]
-		plot_lines(plt_data)
+		plt_data = sub_data[:100,-1]
+		data.append(plt_data)
+	data = np.array(data).T
+	plot_lines(data)
 
 def plot_lines(data):
 	print(data.shape)
@@ -40,13 +42,26 @@ def plot_lines(data):
 	for i in range(cols):
 		sub_data = data[:,i]
 		plt.plot(index, sub_data, color = my_color[i], label = 'name '+str(i))
+	plt.xticks(fontsize=20)
+	plt.yticks(fontsize=20)
+	plt.xlabel('batch', fontsize = 20)
+	plt.ylabel('MAE', fontsize = 20)		
 	plt.grid(linestyle = '-.')
 	plt.legend()
 	plt.show()
 
+def get_line_single_file(domain):
+	data = []
+	for directory in domain:
+		filename = './'+directory+'/loss.txt'
+		data = np.genfromtxt(filename)
+		col_idx = [0,-1]
+		plt_dat = data[:,col_idx]
+		plot_lines(plt_dat)
 
 
 
 if __name__ == '__main__':
 	# multi_domain(domain)
-	get_line_cross_files(domain)
+	# get_line_cross_files(domain)
+	get_line_single_file(domain)
