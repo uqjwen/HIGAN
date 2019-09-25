@@ -344,6 +344,7 @@ def get_doc_neighbors(vec_uit, u_neighbor_mat, i_neighbor_mat, name='item'):
 		selection = len(index) if num>len(index) else num
 
 		neighbors_1 = np.concatenate([index[sort_index][:selection]+1, [0]*addition])
+		neighbors_1[0] = 0
 		neighbors_1 = np.random.permutation(neighbors_1)
 
 		# if len(index)-1>=num:

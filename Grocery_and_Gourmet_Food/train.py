@@ -96,11 +96,12 @@ def evaluation(sess, model, data_loader, flags):
 				model.text: text,
 				model.keep_prob: 1.0}
 	mae, docitem, docuser = sess.run([model.layer_mae, model.doc_item, model.doc_user], feed_dict = feed_dict)
-	np.save('docitem.npy', docitem)
-	np.save('docuser.npy', docuser)
+	# np.save('docitem.npy', docitem)
+	# np.save('docuser.npy', docuser)
 	# print(loss)
 	# loss = np.sqrt(loss)
 	# print(uwatt)
+	print(mae)
 	return mae
 
 def eval_by_batch(sess, model, data_loader):
@@ -212,6 +213,7 @@ if __name__ == '__main__':
 	elif flags.train_test == 'visual':
 		visualization(sess, model, data_loader, filename)
 	elif flags.train_test == 'eval':
-		evaluation(sess, model, data_loader, flags)
+		res = eval_by_batch(sess, model, data_loader)
+		print(res)
 	# else:
 	# 	test(sess, model, data_loader, flags)

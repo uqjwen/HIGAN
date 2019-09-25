@@ -73,7 +73,7 @@ class Model(object):
 
 		# self.loss = loss
 
-		self.train_op = tf.train.AdamOptimizer(learning_rate = 0.0001).minimize(self.layer_loss[-1])
+		self.train_op = tf.train.AdamOptimizer(learning_rate = 0.00001).minimize(self.layer_loss[-1])
 
 
 	def get_cnn(self, latent):

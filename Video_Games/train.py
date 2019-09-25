@@ -41,7 +41,7 @@ def train(sess, model, data_loader, flags):
 			sys.stdout.flush()
 			mean_loss.append(loss)
 			trained_batches = i*batches+b 
-			if trained_batches!=0 and trained_batches%50 == 0:
+			if trained_batches!=0 and trained_batches%10 == 0:
 				rmse = eval_by_batch(sess, model, data_loader)
 				print('\n',rmse[-1])
 				loss = np.mean(mean_loss)
@@ -57,7 +57,7 @@ def train(sess, model, data_loader, flags):
 				if rmse[-1] < best_rmse:
 					best_rmse = rmse[-1]
 					print('saving....')
-					saver.save(sess, flags.ckpt_dir+'/model.ckpt', global_step = trained_batches)
+					# saver.save(sess, flags.ckpt_dir+'/model.ckpt', global_step = trained_batches)
 
 
 

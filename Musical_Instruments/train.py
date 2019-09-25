@@ -57,7 +57,7 @@ def train(sess, model, data_loader, flags):
 				if rmse[-1] < best_rmse:
 					best_rmse = rmse[-1]
 					print('saving....')
-					saver.save(sess, flags.ckpt_dir+'/model.ckpt', global_step = trained_batches)
+					# saver.save(sess, flags.ckpt_dir+'/model.ckpt', global_step = trained_batches)
 
 
 
