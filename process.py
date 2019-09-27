@@ -1,5 +1,7 @@
+import json 
 import numpy as np 
 import matplotlib.pyplot as plt 
+import nltk 
 
 domain = ['Grocery_and_Gourmet_Food', 'Musical_Instruments', 'Office_Products', 'Video_Games']
 my_color = ['#107c10','#DC3C00','#7719AA','#0078D7','#DC6141','#4269A5','#39825A','#DC6141']
@@ -59,9 +61,44 @@ def get_line_single_file(domain):
 		plt_dat = data[:,col_idx]
 		plot_lines(plt_dat)
 
+def readfile(filename):
+	f = open(filename, encoding='utf-8')
+	data = []
+	for line in f.readlines():
+		line = json.loads(line)
+		data.append(line)
+	f.close()
+	return data
 
+def stats_single_file(data):
+	doc_per_user = {}
+	doc_per_item = {}
+	length = []
+	for line in data:
+		user = line['reviewerID']
+		item = line['asin']
+		doc = line['reviewText']
+		tokens = nltk.word_tokenize(doc)
+		length.append(len(tokens))
+		doc_per_user[user] = doc_per_user.get(user,0)+1
+		doc_per_item[item] = doc_per_item.get(item,0)+1
+
+	print('#doc user: ', np.mean(list(doc_per_user.values())))
+	print('#doc item: ', np.mean(list(doc_per_item.values())))
+
+	print('#word doc:', np.mean(length))
+
+
+def stats(domain):
+	for dm in domain:
+		filename = './'+dm+'/'+dm+'.json'
+		data = readfile(filename)
+		print(dm)
+		stats_single_file(data)
+
+	
 
 if __name__ == '__main__':
-	# multi_domain(domain)
-	# get_line_cross_files(domain)
-	get_line_single_file(domain)
+	multi_domain(domain)
+	get_line_cross_files(domain)
+	# get_line_single_file(domain)
