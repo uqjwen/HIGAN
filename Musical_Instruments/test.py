@@ -36,11 +36,24 @@ import numpy as np
 
 # print(usample)
 # print(isample)
-vec1 = np.load('docuser.npy')
-vec2 = np.load('docitem.npy')
+# vec1 = np.load('docuser.npy')
+# vec2 = np.load('docitem.npy')
 
-print(vec1.shape, vec2.shape)
+# print(vec1.shape, vec2.shape)
 # print(vec1[0,0])
 # print(vec2[0,0])
 
-print(vec1[0,1,0] - vec1[2,0,0])
+# print(vec1[0,1,0] - vec1[2,0,0])
+
+
+import tensorflow as tf 
+import sys 
+flags = tf.flags.FLAGS 	
+filename = 'wenjh.dat'
+tf.flags.DEFINE_string('train_test', 'train', 'training or test')
+tf.flags.DEFINE_string('variant','', 'variant of the proposed model, [w_mean, w_max, d_mean, d_max]')
+	# tf.flags.DEFINE_string('base_model', 'att_cnn', 'base model')
+flags(sys.argv)
+tf.flags.DEFINE_string('ckpt_dir',filename.split('.')[0]+"_"+flags.variant, 'directory of checkpoint')
+
+print(flags.ckpt_dir)

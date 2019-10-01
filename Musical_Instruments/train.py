@@ -57,7 +57,7 @@ def train(sess, model, data_loader, flags):
 				if rmse[-1] < best_rmse:
 					best_rmse = rmse[-1]
 					print('saving....')
-					# saver.save(sess, flags.ckpt_dir+'/model.ckpt', global_step = trained_batches)
+					saver.save(sess, flags.ckpt_dir+'/model.ckpt', global_step = trained_batches)
 
 
 
@@ -182,10 +182,14 @@ if __name__ == '__main__':
 	tf.flags.DEFINE_integer('emb_size',100, 'embedding size')
 	tf.flags.DEFINE_integer('num_class', 5, "num of classes")
 	tf.flags.DEFINE_integer('epoch', 40, 'epochs for training')
-	tf.flags.DEFINE_string('ckpt_dir',filename.split('.')[0], 'directory of checkpoint')
 	tf.flags.DEFINE_string('train_test', 'train', 'training or test')
+	tf.flags.DEFINE_string('variant','', 'variant of the proposed model, [w_min, w_max, d_min, d_max]')
 	# tf.flags.DEFINE_string('base_model', 'att_cnn', 'base model')
 	flags(sys.argv)
+
+
+	tf.flags.DEFINE_string('ckpt_dir',filename.split('.')[0]+flags.variant, 'directory of checkpoint')
+
 
 	data_loader = Data_Loader(flags)
 

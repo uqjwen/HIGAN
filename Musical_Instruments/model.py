@@ -56,13 +56,33 @@ class Model(object):
 
 		print(self.uw_emb.shape, self.u_cnn.shape)
 
-		self.uw_att = self.get_word_level_att(self.u_cnn, self.u_latent, self.i_latent, 'user')
-		self.iw_att = self.get_word_level_att(self.i_cnn, self.u_latent, self.i_latent, 'item')
+		if flags.variant == 'w_mean':
+			self.u_cnn = tf.reshape(self.u_cnn, [-1, self.t_num, self.maxlen, self.emb_size])
+			self.i_cnn = tf.reshape(self.i_cnn, [-1, self.t_num, self.maxlen, self.emb_size])
+			self.uw_att = tf.reduce_mean(self.u_cnn, axis=-2)
+			self.iw_att = tf.reduce_mean(self.i_cnn, axis=-2)
+		elif flags.variant == 'w_max':
+			self.u_cnn = tf.reshape(self.u_cnn, [-1, self.t_num, self.maxlen, self.emb_size])
+			self.i_cnn = tf.reshape(self.i_cnn, [-1, self.t_num, self.maxlen, self.emb_size])
+
+			self.uw_att = tf.reduce_max(self.u_cnn, axis=-2)
+			self.iw_att = tf.reduce_max(self.i_cnn, axis=-2)
+		else:
+			self.uw_att = self.get_word_level_att(self.u_cnn, self.u_latent, self.i_latent, 'user')
+			self.iw_att = self.get_word_level_att(self.i_cnn, self.u_latent, self.i_latent, 'item')
+
+		# uw_att: ? 6 100
+		# iw_att: ? 6 100
 
 
-
-
-		self.get_doc_level_att(self.uw_att, self.iw_att)
+		if flags.variant == 'd_mean':
+			self.doc_user.append(tf.reduce_mean(self.uw_att, axis=-2, keepdims = True))
+			self.doc_item.append(tf.reduce_mean(self.iw_att, axis=-2, keepdims = True))
+		elif flags.variant == 'd_max':
+			self.doc_user.append(tf.reduce_max(self.uw_att, axis=-2, keepdims = True))
+			self.doc_item.append(tf.reduce_max(self.iw_att, axis=-2, keepdims = True))
+		else:
+			self.get_doc_level_att(self.uw_att, self.iw_att)
 
 
 		self.get_layer_loss()
@@ -314,7 +334,6 @@ class Model(object):
 
 	def get_layer_loss(self):
 		for i in range(len(self.doc_user)):
-
 			u_side = self.u_latent+tf.squeeze(self.doc_user[i],axis=1)
 			i_side = self.i_latent+tf.squeeze(self.doc_item[i],axis=1)
 			# u_side = tf.squeeze(self.doc_user[i], axis=1)

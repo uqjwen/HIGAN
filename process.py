@@ -61,20 +61,15 @@ def get_line_single_file(domain):
 		plt_dat = data[:,col_idx]
 		plot_lines(plt_dat)
 
-def readfile(filename):
-	f = open(filename, encoding='utf-8')
-	data = []
-	for line in f.readlines():
-		line = json.loads(line)
-		data.append(line)
-	f.close()
-	return data
 
-def stats_single_file(data):
+def stats_single_file(filename):
 	doc_per_user = {}
 	doc_per_item = {}
 	length = []
-	for line in data:
+	f = open(filename, encoding='utf-8')
+	for line in f.readlines():
+		line = json.loads(line)
+
 		user = line['reviewerID']
 		item = line['asin']
 		doc = line['reviewText']
@@ -91,14 +86,15 @@ def stats_single_file(data):
 
 def stats(domain):
 	for dm in domain:
-		filename = './'+dm+'/'+dm+'.json'
-		data = readfile(filename)
+		filename = '/home/wenjh/aHIGAN/'+dm+'/'+dm+'_5.json'
+		# data = readfile(filename)
 		print(dm)
-		stats_single_file(data)
+		stats_single_file(filename)
 
 	
 
 if __name__ == '__main__':
-	multi_domain(domain)
-	get_line_cross_files(domain)
+	# multi_domain(domain)
+	# get_line_cross_files(domain)
 	# get_line_single_file(domain)
+	stats(domain)
