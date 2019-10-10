@@ -87,22 +87,22 @@ def evaluation(sess, model, data_loader, flags):
 		return 
 
 
-	u_input, i_input, label, utext, itext, text = data_loader.eval()
-	feed_dict = {model.u_input: u_input,
-				model.i_input: i_input,
-				model.label: label,
-				model.utext: utext,
-				model.itext: itext,
-				model.text: text,
-				model.keep_prob: 1.0}
-	mae, docitem, docuser = sess.run([model.layer_mae, model.doc_item, model.doc_user], feed_dict = feed_dict)
-	# np.save('docitem.npy', docitem)
-	# np.save('docuser.npy', docuser)
-	# print(loss)
-	# loss = np.sqrt(loss)
-	# print(uwatt)
-	print(mae)
-	return mae
+
+	uembed,iembed = sess.run([model.u_embed, model.i_embed])
+	np.save('user.npy', uembed)
+	np.save('item.npy', iembed)
+
+
+	# u_input, i_input, label, utext, itext, text = data_loader.eval()
+	# feed_dict = {model.u_input: u_input,
+	# 			model.i_input: i_input,
+	# 			model.label: label,
+	# 			model.utext: utext,
+	# 			model.itext: itext,
+	# 			model.text: text,
+	# 			model.keep_prob: 1.0}
+	# mae, docitem, docuser = sess.run([model.layer_mae, model.doc_item, model.doc_user], feed_dict = feed_dict)
+	# return mae
 
 def eval_by_batch(sess, model, data_loader):
 	eval_data = data_loader.eval()
@@ -213,7 +213,6 @@ if __name__ == '__main__':
 	elif flags.train_test == 'visual':
 		visualization(sess, model, data_loader, filename)
 	elif flags.train_test == 'eval':
-		res = eval_by_batch(sess, model, data_loader)
-		print(res)
+		evaluation(sess, model, data_loader, flags)
 	# else:
 	# 	test(sess, model, data_loader, flags)

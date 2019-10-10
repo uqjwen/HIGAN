@@ -96,6 +96,46 @@ class Data_Loader():
 
 		return users, items, labels, utexts, itexts, texts
 
+	def assert_doc(self, idxs, rating):
+		res = []
+		for idx in idxs:
+			# label = self.vec_uit[self.vec_uit[:,2] == doc_idx][0][3]
+			utexts = self.train_u_text[idx]
+			itexts = self.train_i_text[idx]
+			u_flag = 0
+			for utext in utexts:
+				if utext == 0:
+					continue
+				label = self.vec_uit[self.vec_uit[:,2] == utext][0][3]
+				if label == rating:
+					u_flag +=1
+			i_flag = 0
+			for itext in itexts:
+				if itext == 0:
+					continue
+				label = self.vec_uit[self.vec_uit[:,2] == itext][0][3]
+				if label == rating:
+					i_flag +=1
+			if u_flag >1 and i_flag > 1:
+				res.append(idx)
+		return res
+
+	def assert_docs(self, pos_idxs, neg_idxs):
+		pos = []
+		neg = []
+		pos = self.assert_doc(pos_idxs, 5)
+		neg = self.assert_doc(neg_idxs, 1)
+		if len(pos)!=0 and len(neg)!=0:
+			print(len(pos), len(neg))
+		if len(pos) == 0 or len(neg) == 0:
+			return False
+		else:
+			return pos[0], neg[0]
+
+
+
+
+
 	def find_a_user(self):
 		while True:
 			idx  = np.random.randint(self.train_size)
@@ -112,8 +152,14 @@ class Data_Loader():
 				pos_idxs = sub_indices[pos_indices]
 				neg_idxs = sub_indices[neg_indices]
 
-				pos_idx = np.random.choice(pos_idxs)
-				neg_idx = np.random.choice(neg_idxs)
+				res = self.assert_docs(pos_idxs, neg_idxs)
+				if res == False:
+					continue
+				else:
+					pos_idx, neg_idx = res
+
+				# pos_idx = np.random.choice(pos_idxs)
+				# neg_idx = np.random.choice(neg_idxs)
 
 				pos = self.train_uit[pos_idx]
 				neg = self.train_uit[neg_idx]
@@ -129,10 +175,30 @@ class Data_Loader():
 		text = uit[:,2]
 		label = uit[:,3:]
 
+		print(uit.shape)
+
+
 		utexts = self.train_u_text[idx]
 		itexts = self.train_i_text[idx]
 
+
+
+		for utext in utexts[1]:
+			# print(utexts)
+			if utext == 0:
+				continue
+			# print(np.where(self.vec_uit[:,2] == utext))
+			ulabel = self.vec_uit[self.vec_uit[:,2] == utext][0][3]
+			print("utext label: ", ulabel)
+		for itext in itexts[1]:
+			if itext == 0:
+				continue
+			ilabel = self.vec_uit[self.vec_uit[:,2] == itext][0][3]
+			print('itext label: ', ilabel)
+
+
 		return user,item,label,utexts,itexts,text
+
 
 
 
@@ -212,8 +278,8 @@ class Data_Loader():
 
 
 if __name__ == '__main__':
-	prefix = '/home/wenjh/aHIGAN/Grocery_and_Gourmet_Food/'
-	filename = prefix+'Grocery_and_Gourmet_Food_5.json'
+	prefix = '/home/wenjh/aHIGAN/Musical_Instruments/'
+	filename = prefix+'Musical_Instruments_5.json'
 
 
 	flags = tf.flags.FLAGS 	
@@ -228,4 +294,6 @@ if __name__ == '__main__':
 	# data_loader.sample_point()
 	# data_loader.next_batch()
 	# data_loader.validate()
-	data_loader.eval()
+	# data_loader.eval()
+	res = data_loader.find_a_user()
+	print(res)

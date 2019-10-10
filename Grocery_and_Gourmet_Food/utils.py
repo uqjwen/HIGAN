@@ -42,6 +42,8 @@ def visual(data, uit, data_loader,utexts, itexts, u_texts, i_texts, filename):
 	document = Document()
 
 	for idx, (doc_idx, doc) in enumerate(zip(utexts, u_texts)):
+		attention_score = data[2][-1][idx]
+		document.add_paragraph('attention score: '+str(attention_score))
 		word_atts = data[0][idx]
 		raw_doc = raw_data[doc_idx-1]
 
@@ -49,6 +51,8 @@ def visual(data, uit, data_loader,utexts, itexts, u_texts, i_texts, filename):
 
 	document.add_paragraph('-----------------------------------------------------')
 	for idx, (doc_idx, doc) in enumerate(zip(itexts, i_texts)):
+		attention_score = data[3][-1][idx]
+		document.add_paragraph('attention score: '+str(attention_score))
 		word_atts = data[1][idx]
 		raw_doc = raw_data[doc_idx-1]
 
