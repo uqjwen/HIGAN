@@ -1,0 +1,7 @@
+epoch0 train time: 10.354s test time: 0.155  loss = 205.233 val_mse = 4.432 mse = 4.657 mae = 2.049
+epoch1 train time: 2.961s test time: 0.150  loss = 185.841 val_mse = 1.124 mse = 1.151 mae = 0.928
+epoch2 train time: 2.984s test time: 0.148  loss = 154.138 val_mse = 1.004 mse = 1.002 mae = 0.841
+epoch3 train time: 3.101s test time: 0.148  loss = 116.565 val_mse = 0.932 mse = 0.896 mae = 0.768
+epoch4 train time: 3.036s test time: 0.151  loss = 85.738 val_mse = 0.918 mse = 0.874 mae = 0.750
+epoch5 train time: 2.958s test time: 0.163  loss = 61.638 val_mse = 0.919 mse = 0.857 mae = 0.708
+epoch6 train time: 3.021s test time: 0.161  loss = 43.163 val_mse = 0.919 mse = 0.854 mae = 0.698
