@@ -17,6 +17,7 @@ class Model(object):
 		self.maxlen 	= data_loader.maxlen
 		self.data_size  = data_loader.data_size+1
 		self.vec_texts 	= data_loader.vec_texts
+		self.flags = flags
 
 		self.u_input 	= tf.placeholder(tf.int32, shape=[None,])
 		self.i_input 	= tf.placeholder(tf.int32, shape=[None,])
@@ -56,7 +57,7 @@ class Model(object):
 
 		print(self.uw_emb.shape, self.u_cnn.shape)
 
-		if flags.variant == 'w_mean':
+		if flags.variant == 'w_avg':
 			self.u_cnn = tf.reshape(self.u_cnn, [-1, self.t_num, self.maxlen, self.emb_size])
 			self.i_cnn = tf.reshape(self.i_cnn, [-1, self.t_num, self.maxlen, self.emb_size])
 			self.uw_att = tf.reduce_mean(self.u_cnn, axis=-2)
@@ -75,7 +76,7 @@ class Model(object):
 		# iw_att: ? 6 100
 
 
-		if flags.variant == 'd_mean':
+		if flags.variant == 'd_avg':
 			self.doc_user.append(tf.reduce_mean(self.uw_att, axis=-2, keepdims = True))
 			self.doc_item.append(tf.reduce_mean(self.iw_att, axis=-2, keepdims = True))
 		elif flags.variant == 'd_max':
@@ -249,7 +250,10 @@ class Model(object):
 		
 
 	def get_doc_level_att(self, u_watt, i_watt):
-		doc_user = tf.reduce_mean(u_watt, axis=1, keepdims = True)
+		if self.flags.variant == 'w_max':
+			doc_user = tf.reduce_max(u_watt, axis=1, keepdims = True)
+		else:
+			doc_user = tf.reduce_mean(u_watt, axis=1, keepdims = True)
 		# doc_user, doc_item = self.get_initial_vec(u_watt, i_watt)
 		docs_user = u_watt
 		# doc_user = u_watt[:,0:1,:]
@@ -257,7 +261,10 @@ class Model(object):
 
 		docs_item = i_watt 
 		# doc_item = i_watt[:,0:1,:]
-		doc_item = tf.reduce_mean(i_watt, axis=1, keepdims = True)
+		if self.flags.variant == 'w_max':
+			doc_item = tf.reduce_max(i_watt, axis=1, keepdims = True)
+		else:
+			doc_item = tf.reduce_mean(i_watt, axis=1, keepdims = True)
 		self.doc_item.append(doc_item)
 
 		self.u_watt = u_watt 

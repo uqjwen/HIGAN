@@ -182,8 +182,8 @@ def get_vocab_tfidf(corpus, vocab_size = 20000):
 
 
 def validate(filename):
-	prefix = '/home/wenjh/aHIGAN/Musical_Instruments/'
-	filename = prefix+'Musical_Instruments_5.json'
+	prefix = '/home/wenjh/aHIGAN/Office_Products/'
+	filename = prefix+'Office_Products_5.json'
 	data1 = readfile(filename)
 	data2 = pickle.load(open(filename.split('.')[0]+'.pkl','rb'))
 
@@ -218,24 +218,31 @@ def validate(filename):
 		print(text['reviewerID'])
 	print(u_text)
 def get_neighbors(mat):
-	rows, cols = mat.shape
-	res_mat = np.zeros((rows,rows))
+	rows,cols = mat.shape
+	# res_mat = np.zeros((rows,rows))
+	res_mat = []
+	length = []
+
 	for i in range(rows):
 		sys.stdout.write('\r {}/{}'.format(i,rows))
-		for j in range(i,rows):
-			a1 = mat[i]
-			a2 = mat[j]
-			commo_vec = (a1*a2!=0).astype(int)
-			equal_vec = (a1-a2==0).astype(int)
+		a1 = mat[i]
+		nz_idx = np.where(a1!=0)[0]
+		a1 = a1[nz_idx]
+		sub_mat = mat[:,nz_idx]
 
-			coeq_vote = np.sum(commo_vec*equal_vec)
-			comm_vote = np.sum(commo_vec)
-			norm = np.sqrt(comm_vote)
-			norm = max(norm,1)
-			res = coeq_vote/norm
+		commo_vec = (a1*sub_mat!=0).astype(int)
+		equal_vec = (a1==sub_mat).astype(int)
 
-			res_mat[i,j] = res 
-			res_mat[j,i] = res
+		coeq_vote = np.sum(commo_vec*equal_vec, axis=1)
+		comm_vote = np.sum(commo_vec, axis=1)
+
+		norm = np.sqrt(comm_vote)
+		norm = np.maximum(norm, 1)
+		res = coeq_vote/norm 
+
+		res = np.where(res>0)[0]
+
+		res_mat.append(res)
 	return res_mat
 
 def get_neighbors_1(mat):
@@ -263,7 +270,6 @@ def get_neighbors_1(mat):
 		res_mat[i:,i] = res 
 	return res_mat
 
-
 def build_ui_text(vec_uit, num_user, num_item, filename):
 	filename = filename.split('.')[0]
 	ui_mat = np.zeros((num_user, num_item))
@@ -272,8 +278,9 @@ def build_ui_text(vec_uit, num_user, num_item, filename):
 		pmtt = np.load(pmtt_file)
 	else:
 		pmtt = np.random.permutation(len(vec_uit))
+		# np.save(pmtt_file, pmtt)
 
-	train_size = int(len(vec_uit)*0.8)
+	train_size = int(len(vec_uit)*0.6)
 	train_vec_uit = np.array(vec_uit)[pmtt][:train_size]
 	for uit in train_vec_uit:
 		u = uit[0]
@@ -281,20 +288,24 @@ def build_ui_text(vec_uit, num_user, num_item, filename):
 		r = uit[3]
 		ui_mat[u,i] = r 
 	u_neighbor_mat = np.zeros((num_user, num_user))
-	file = filename+'_u_neighbors.npy'
+	file = filename+'_u_neighbors.pkl'
 	if not os.path.exists(file):
 		print('user neighbors file not exists')
-		u_neighbor_mat = get_neighbors_1(ui_mat)
-		np.save(file, u_neighbor_mat)
+		u_neighbor_mat = get_neighbors(ui_mat)
+		pickle.dump(u_neighbor_mat, open(file,'wb'))
+		# np.save(file, u_neighbor_mat)
 	else:
-		u_neighbor_mat = np.load(file)
-	file = filename+'_i_neighbors.npy'
+		# u_neighbor_mat = np.load(file)
+		u_neighbor_mat = pickle.load(open(file,'rb'))
+	file = filename+'_i_neighbors.pkl'
 	if not os.path.exists(file):
 		print('user neighbors file not exists')
-		i_neighbor_mat = get_neighbors_1(ui_mat.T)
-		np.save(file, i_neighbor_mat)
+		i_neighbor_mat = get_neighbors(ui_mat.T)
+		# np.save(file, i_neighbor_mat)
+		pickle.dump(i_neighbor_mat, open(file,'wb'))
 	else:
-		i_neighbor_mat = np.load(file)
+		# i_neighbor_mat = np.load(file)
+		i_neighbor_mat = pickle.load(open(file,'rb'))
 
 	print("getting documents...")
 	vec_u_text = get_doc_neighbors(vec_uit, u_neighbor_mat, i_neighbor_mat, 'item')
@@ -302,6 +313,7 @@ def build_ui_text(vec_uit, num_user, num_item, filename):
 	np.savetxt('utexts.txt', vec_u_text, fmt='%d')
 	np.savetxt('itexts.txt', vec_i_text, fmt='%d')
 	return vec_u_text, vec_i_text
+
 
 def get_doc_neighbors(vec_uit, u_neighbor_mat, i_neighbor_mat, name='item'):
 	uit = np.array(vec_uit)
@@ -326,17 +338,30 @@ def get_doc_neighbors(vec_uit, u_neighbor_mat, i_neighbor_mat, name='item'):
 		users = data2[index]
 
 		sims = neighbor_mat[user]
-		similarity = sims[users]
 
-		sort_index = np.argsort(similarity)[::-1]
 
-		if len(index)>=num:
-			neighbors_1 = index[sort_index][:num]+1
+
+		neighbors_1 = []
+		for usr,idx in zip(users, index):
+			if usr in sims:
+				neighbors_1.append(idx+1)
+
+		if len(neighbors_1)>num:
+			neighbors_1 = neighbors_1[:num]
 		else:
-			neighbors_1 = np.concatenate([index[sort_index]+1,np.array([0]*(num-len(index)))])
+			neighbors_1 = neighbors_1+[0]*(num-len(neighbors_1))
 		neighbors_1[0] = 0
-		neighbors_1 = np.random.permutation(neighbors_1)
-		# neighbors_1 = [i+1]+list(index[sort_index][:num]+1)
+
+		# similarity = sims[users]
+
+		# sort_index = np.argsort(similarity)[::-1]
+
+		# if len(index)>=num:
+		# 	neighbors_1 = index[sort_index][:num]+1
+		# else:
+		# 	neighbors_1 = np.concatenate([index[sort_index]+1,np.array([0]*(num-len(index)))])
+		# neighbors_1[0] = 0
+		# neighbors_1 = np.random.permutation(neighbors_1)
 
 		res.append(neighbors_1)
 
@@ -344,10 +369,14 @@ def get_doc_neighbors(vec_uit, u_neighbor_mat, i_neighbor_mat, name='item'):
 
 def build_data(filename):
 	data = readfile(filename)
-	print('building vocab...')
+	# u_dict, i_dict = filter_ui(data, 5,5)
+	# print(len(u_dict), len(i_dict))
+	# data = data_after_filter(data, u_dict, i_dict)
+	# vec_texts, vocab, word2idx = build_vocab(data)
 	temp_file = filename.split('/')[:-1]
 	temp_file = '/'.join(temp_file)+'/temp_dat.pkl'
-
+	
+	print('building vocab...')
 	if not os.path.exists(temp_file):
 		vec_texts, vocab, word2idx = build_vocab(data)
 		temp_data = {}
@@ -364,7 +393,7 @@ def build_data(filename):
 		vocab = temp_data['vocab']
 		word2idx = temp_data['word2idx']
 
-	print('building ui vocab...')
+	print('building ui vocab...')	
 	vec_uit, vec_u_text, vec_i_text, user2idx, item2idx = build_ui_vocab(data)
 	num_user = len(user2idx)
 	num_item = len(item2idx)

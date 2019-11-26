@@ -23,6 +23,7 @@ def train(sess, model, data_loader, flags):
 	for i in range(flags.epoch):
 		data_loader.reset_pointer()
 		batches = data_loader.train_size // flags.batch_size+1
+		t1 = time.time()
 		for b in range(batches):
 			u_input, i_input, label, utext, itext, text = data_loader.next_batch()
 
@@ -34,30 +35,34 @@ def train(sess, model, data_loader, flags):
 						model.text:text,
 						model.keep_prob: 0.5}
 			_,loss = sess.run([model.train_op, model.layer_loss[-1]], feed_dict = feed_dict)
+		t2 = time.time()
+		rmse = eval_by_batch(sess, model, data_loader)
+		t3 = time.time()
+		print('train time: ',t2-t1, ' test time: ', t3-t2)
 
-			# print(pred)
-			# print(label)
-			sys.stdout.write('\repoch:{}, batch:{}/{}, loss:{}'.format(i,b,batches,loss))
-			sys.stdout.flush()
-			mean_loss.append(loss)
-			trained_batches = i*batches+b 
-			if trained_batches!=0 and trained_batches%100 == 0:
-				rmse = eval_by_batch(sess, model, data_loader)
-				print('\n',rmse[-1])
-				loss = np.mean(mean_loss)
-				print(loss)
-				mean_loss = []
-				# rmse = eval_by_batch(sess, model, data_loader)
-				loss = round(loss,5)
-				# rmse = round(rmse)
-				rmse = [round(item,5) for item in rmse]
 
-				fr.write(str(loss)+'\t'+'\t'.join(map(str, rmse)))
-				fr.write('\n')
-				if rmse[-1] < best_rmse:
-					best_rmse = rmse[-1]
-					print('saving....')
-					saver.save(sess, flags.ckpt_dir+'/model.ckpt', global_step = trained_batches)
+
+			# sys.stdout.write('\repoch:{}, batch:{}/{}, loss:{}'.format(i,b,batches,loss))
+			# sys.stdout.flush()
+			# mean_loss.append(loss)
+			# trained_batches = i*batches+b 
+			# if trained_batches!=0 and trained_batches%100 == 0:
+			# 	rmse = eval_by_batch(sess, model, data_loader)
+			# 	print('\n',rmse[-1])
+			# 	loss = np.mean(mean_loss)
+			# 	print(loss)
+			# 	mean_loss = []
+
+			# 	loss = round(loss,5)
+
+			# 	rmse = [round(item,5) for item in rmse]
+
+			# 	fr.write(str(loss)+'\t'+'\t'.join(map(str, rmse)))
+			# 	fr.write('\n')
+			# 	if rmse[-1] < best_rmse:
+			# 		best_rmse = rmse[-1]
+			# 		print('saving....')
+			# 		saver.save(sess, flags.ckpt_dir+'/model.ckpt', global_step = trained_batches)
 
 
 

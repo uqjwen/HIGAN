@@ -23,6 +23,7 @@ def train(sess, model, data_loader, flags):
 	for i in range(flags.epoch):
 		data_loader.reset_pointer()
 		batches = data_loader.train_size // flags.batch_size+1
+		t1 = time.time()
 		for b in range(batches):
 			u_input, i_input, label, utext, itext, text = data_loader.next_batch()
 
@@ -34,7 +35,10 @@ def train(sess, model, data_loader, flags):
 						model.text:text,
 						model.keep_prob: 0.5}
 			_,loss = sess.run([model.train_op, model.layer_loss[-1]], feed_dict = feed_dict)
-
+		# t2 = time.time()
+		# validation(sess, model, data_loader)
+		# t3 = time.time()
+		# print('train time: ', t2-t1, ' test time: ',t3-t2)
 			# print(pred)
 			# print(label)
 			sys.stdout.write('\repoch:{}, batch:{}/{}, loss:{}'.format(i,b,batches,loss))
@@ -86,19 +90,19 @@ def evaluation(sess, model, data_loader, flags):
 		print(" [!] loading parameters failed  ...")
 		return 
 
-	uembed,iembed = sess.run([model.u_embed, model.i_embed])
-	np.save('user.npy', uembed)
-	np.save('item.npy', iembed)
+	# uembed,iembed = sess.run([model.u_embed, model.i_embed])
+	# np.save('user.npy', uembed)
+	# np.save('item.npy', iembed)
 
-	# u_input, i_input, label, utext, itext, text = data_loader.eval()
-	# feed_dict = {model.u_input: u_input,
-	# 			model.i_input: i_input,
-	# 			model.label: label,
-	# 			model.utext: utext,
-	# 			model.itext: itext,
-	# 			model.text: text,
-	# 			model.keep_prob: 1.0}
-	# mae, docitem, docuser = sess.run([model.layer_mae, model.doc_item, model.doc_user], feed_dict = feed_dict)
+	u_input, i_input, label, utext, itext, text = data_loader.eval()
+	feed_dict = {model.u_input: u_input,
+				model.i_input: i_input,
+				model.label: label,
+				model.utext: utext,
+				model.itext: itext,
+				model.text: text,
+				model.keep_prob: 1.0}
+	mae, docitem, docuser = sess.run([model.layer_mae, model.doc_item, model.doc_user], feed_dict = feed_dict)
 	# np.save('docitem.npy', docitem)
 	# np.save('docuser.npy', docuser)
 
@@ -181,11 +185,11 @@ if __name__ == '__main__':
 	flags = tf.flags.FLAGS 	
 	tf.flags.DEFINE_string('filename',filename,'name of file')
 	tf.flags.DEFINE_integer('batch_size',64,'batch size')
-	tf.flags.DEFINE_integer('emb_size',100, 'embedding size')
+	tf.flags.DEFINE_integer('emb_size',50, 'embedding size')
 	tf.flags.DEFINE_integer('num_class', 5, "num of classes")
 	tf.flags.DEFINE_integer('epoch', 40, 'epochs for training')
 	tf.flags.DEFINE_string('train_test', 'train', 'training or test')
-	tf.flags.DEFINE_string('variant','', 'variant of the proposed model, [w_min, w_max, d_min, d_max]')
+	tf.flags.DEFINE_string('variant','', 'variant of the proposed model, [w_avg, w_max, d_avg, d_max]')
 	# tf.flags.DEFINE_string('base_model', 'att_cnn', 'base model')
 	flags(sys.argv)
 

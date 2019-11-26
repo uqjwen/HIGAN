@@ -23,6 +23,7 @@ def train(sess, model, data_loader, flags):
 	for i in range(flags.epoch):
 		data_loader.reset_pointer()
 		batches = data_loader.train_size // flags.batch_size+1
+		t1 = time.time()
 		for b in range(batches):
 			u_input, i_input, label, utext, itext, text = data_loader.next_batch()
 
@@ -34,11 +35,16 @@ def train(sess, model, data_loader, flags):
 						model.text:text,
 						model.keep_prob: 0.5}
 			_,loss = sess.run([model.train_op, model.layer_loss[-1]], feed_dict = feed_dict)
+			# sys.stdout.write('\repoch:{}, batch:{}/{}, loss:{}'.format(i,b,batches,loss))
+			# sys.stdout.flush()
 
-			# print(pred)
-			# print(label)
+		# t2 = time.time()
+		# rmse = eval_by_batch(sess, model, data_loader)
+		# t3 = time.time()
+		# print('train time: ',t2-t1, ' test time: ', t3-t2)
 			sys.stdout.write('\repoch:{}, batch:{}/{}, loss:{}'.format(i,b,batches,loss))
 			sys.stdout.flush()
+
 			mean_loss.append(loss)
 			trained_batches = i*batches+b 
 			if trained_batches!=0 and trained_batches%100 == 0:
@@ -47,9 +53,7 @@ def train(sess, model, data_loader, flags):
 				loss = np.mean(mean_loss)
 				print(loss)
 				mean_loss = []
-				# rmse = eval_by_batch(sess, model, data_loader)
 				loss = round(loss,5)
-				# rmse = round(rmse)
 				rmse = [round(item,5) for item in rmse]
 
 				fr.write(str(loss)+'\t'+'\t'.join(map(str, rmse)))
@@ -86,9 +90,12 @@ def evaluation(sess, model, data_loader, flags):
 		print(" [!] loading parameters failed  ...")
 		return 
 
+
 	uembed,iembed = sess.run([model.u_embed, model.i_embed])
 	np.save('user.npy', uembed)
 	np.save('item.npy', iembed)
+
+
 
 	# u_input, i_input, label, utext, itext, text = data_loader.eval()
 	# feed_dict = {model.u_input: u_input,
@@ -141,6 +148,8 @@ def visualization(sess, model, data_loader, filename):
 		return
 	# user,item,label, utexts, itexts, text= data_loader.sample_point()
 	user,item,label, utexts, itexts, text= data_loader.find_a_user()
+	utexts = utexts.astype(int)
+	itexts = itexts.astype(int)
 
 	feed_dict = {model.u_input: user,
 				model.i_input: item,
@@ -154,7 +163,6 @@ def visualization(sess, model, data_loader, filename):
 
 	u_texts = data_loader.vec_texts[utexts]
 	i_texts = data_loader.vec_texts[itexts]
-
 	res[2] = np.array(res[2]).transpose(1,0,2)
 	res[3] = np.array(res[3]).transpose(1,0,2)
 
@@ -183,7 +191,7 @@ if __name__ == '__main__':
 	tf.flags.DEFINE_integer('batch_size',128,'batch size')
 	tf.flags.DEFINE_integer('emb_size',100, 'embedding size')
 	tf.flags.DEFINE_integer('num_class', 5, "num of classes")
-	tf.flags.DEFINE_integer('epoch', 10, 'epochs for training')
+	tf.flags.DEFINE_integer('epoch', 100, 'epochs for training')
 	tf.flags.DEFINE_string('ckpt_dir',filename.split('.')[0], 'directory of checkpoint')
 	tf.flags.DEFINE_string('train_test', 'train', 'training or test')
 	# tf.flags.DEFINE_string('base_model', 'att_cnn', 'base model')
@@ -194,6 +202,8 @@ if __name__ == '__main__':
 	model = Model(flags, data_loader)
 
 	sess = tf.Session()
+	# tf.set_random_seed(1234)
+	# np.random.seed(1234)
 
 	sess.run(tf.global_variables_initializer())
 	sess.run(model.w_embed.assign(data_loader.w_embed))
